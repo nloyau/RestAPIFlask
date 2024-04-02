@@ -1,8 +1,7 @@
 from sqlalchemy.exc import IntegrityError
-from flask import jsonify, request
+from flask import app, jsonify, request
 from flask_restful import Resource
 from marshmallow import ValidationError
-
 
 from models import Product, User, db
 from schema import ProductSchema, UserSchema
@@ -23,9 +22,8 @@ class ProductResource(Resource):
             all_products = Product.query.all()
             return self.product_list_schema.dump(all_products)
 
-    
     def post(self):
-        if not User.verify_auth_token(request.headers['Authorization'][7:]):
+        if not User.verify_auth_token(request.headers['Authorization']):
             return jsonify(msg="Invalid token")
         try:
             new_product_data = self.product_schema.load(request.json)
@@ -82,7 +80,10 @@ class UserResource(Resource):
     user_schema = UserSchema()
     def post(self):
         try:
+            print("User.Post")
+            print(request.json)
             new_user_data = self.user_schema.load(request.json)
+            
         except ValidationError as err:
             return {"message":"Validation Error", "errors": err.messages}, 400
 
@@ -91,10 +92,10 @@ class UserResource(Resource):
             password = new_user_data['password']
             #user.hash_password(password)
         )
-
+        print("Persist")
         db.session.add(new_user)
         db.session.commit()
         token=new_user.get_auth_token()
-        User.verify_auth_token(token)
+        #User.verify_auth_token(token)
 
         return jsonify(token=token)

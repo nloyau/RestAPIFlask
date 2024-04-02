@@ -1,43 +1,78 @@
-### get 
-GET http://127.0.0.1:5000/products HTTP/1.1
+"rest-client.environmentVariables": {
+    "$shared": {
+        "version": "v1",
+        "prodToken": "eyJpZCI6MzEsInRpbWVzdGFtcHMiOiIxNzEyMDcyODUzIn0.ZgwolQ.H0HsL4M2hsb4wYphekMXWtCrMt0",
+        "nonProdToken": "bar"
+    },
+    "local": {
+        "version": "v2",
+        "host": "localhost",
+        "token": "{{$shared nonProdToken}}",
+        "secretKey": "devSecret"
+    },
+    "production": {
+        "host": "example.com",
+        "token": "{{$shared prodToken}}",
+        "secretKey" : "prodSecret"
+    }
+}
+
+@hostname = localhost
+@protocol = http
+@port = 5000
+@host = {{protocol}}://{{hostname}}:{{port}}
+@contentType = application/json
+
+
 
 ### post
-POST http://127.0.0.1:5000/api/users
-Content-Type: application/json
+# @name Login
+POST {{host}}/api/users HTTP/1.1
+Content-Type: {{contentType}}
 
 {
-    "username" :"admin",
+    "username" : "admin",
     "password" : "admin"
 }
 
+### get
+#
+@token = {{Login.response.body.$.token}}
+
+GET {{host}}/products HTTP/1.1
+Authorization: {{token}}
+
 ### post
-POST http://127.0.0.1:5000/products HTTP/1.1
-Content-Type: application/json
-Authorization: Bearer eyJpZCI6MzEsInRpbWVzdGFtcHMiOiIxNzEyMDcyODUzIn0.ZgwolQ.H0HsL4M2hsb4wYphekMXWtCrMt0
+# @name AddProduct
+POST {{host}}/products HTTP/1.1
+Content-Type: {{contentType}}
+Authorization: {{token}}
 
 {
-    "name" : "truc",
+    "name" : "truc2",
     "description": "machine",
     "price": "999"
 }
 
 ### put
-PUT http://127.0.0.1:5000/product/2 HTTP/1.1
-Content-Type: application/json
+# @name ModifyProduct
+@product_id = {{AddProduct.response.body.$.id}}
+PUT {{host}}/product/{{product_id}} HTTP/1.1
+Content-Type: {{contentType}}
 
 {
-    "name" : "truc",
+    "name" : "truc2",
     "description": "machine chose",
     "price": "333"
 }
 
 ### path
-PATCH http://127.0.0.1:5000/product/2 HTTP/1.1
-Content-Type: application/json
+PATCH {{host}}/product/{{product_id}} HTTP/1.1
+Content-Type: {{contentType}}
 
 {
     "price": "555"
 }
 
 ### delete
-DELETE http://127.0.0.1:5000/product/2 HTTP/1.1
+DELETE {{host}}/product/{{product_id}} HTTP/1.1

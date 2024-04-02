@@ -32,21 +32,15 @@ class Product(Base):
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key = True)
-    username = Column(String(32), index = True)
+    username = Column(String(32), index=True, unique=True,nullable=False)
     password = Column(EncryptedType(Unicode,
                                            secret_key,
                                            AesEngine,
                                            'pkcs5'))
 
-    def hash_password(self, password):
-        self.password = pwd_context.encrypt(password)
-
-    def verify_password(self, password):
-        return pwd_context.verify(password, self.password)
     def generate_auth_token(self, expiration = 600):
         s = Serializer(secret_key)
         return s.dumps({'id': self.id, 'timestamps' : datetime.now().strftime("%s")})
-    
 
     @staticmethod
     def verify_auth_token(token):

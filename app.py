@@ -5,7 +5,8 @@ from resources import ProductResource, UserResource
 from schema import ma
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///products.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
+
 
 db.init_app(app)
 ma.init_app(app)
@@ -15,20 +16,22 @@ api = Api(app)
 api.add_resource(UserResource, '/api/users')
 api.add_resource(ProductResource, '/products','/product/<int:product_id>')
 
-
-
 with app.app_context():
     try:
-        #db.drop_all()
-        #db.create_all()
+        db.drop_all()
+        db.create_all()
 
-        #test = Product(name="Test",description="desc",price="20")
+        test = Product(name="Test",description="desc",price="20")
 
-        #db.session.add(test)
-        #db.session.commit()
+        db.session.add(test)
+        db.session.commit()
 
         mon_test = db.session.query(Product).filter(Product.name == "Test").first()
         print(f"{mon_test.id} {mon_test.name}: {mon_test.description}")
 
     except(e):
         print("erreur")
+    pass
+
+if __name__ == "__main__":
+    app.run(ssl_context=('cert.pem', 'key.pem'))
