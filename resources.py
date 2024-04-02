@@ -1,9 +1,11 @@
-from flask import request
+from sqlalchemy.exc import IntegrityError
+from flask import jsonify, request
 from flask_restful import Resource
 from marshmallow import ValidationError
 
-from models import Product, db
-from schema import ProductSchema
+
+from models import Product, User, db
+from schema import ProductSchema, UserSchema
 
 
 class ProductResource(Resource):
@@ -21,7 +23,10 @@ class ProductResource(Resource):
             all_products = Product.query.all()
             return self.product_list_schema.dump(all_products)
 
+    
     def post(self):
+        if not User.verify_auth_token(request.headers['Authorization'][7:]):
+            return jsonify(msg="Invalid token")
         try:
             new_product_data = self.product_schema.load(request.json)
         except ValidationError as err:
@@ -33,8 +38,11 @@ class ProductResource(Resource):
             price = new_product_data['price']
         )
 
-        db.session.add(new_product)
-        db.session.commit()
+        try: 
+            db.session.add(new_product)
+            db.session.commit()
+        except IntegrityError as err:
+            return {"message":"Constraint error", "errors": err.detail}, 400
 
         return self.product_schema.dump(new_product)
 
@@ -69,3 +77,24 @@ class ProductResource(Resource):
         db.session.delete(product)
         db.session.commit()
         return '', 204
+
+class UserResource(Resource):
+    user_schema = UserSchema()
+    def post(self):
+        try:
+            new_user_data = self.user_schema.load(request.json)
+        except ValidationError as err:
+            return {"message":"Validation Error", "errors": err.messages}, 400
+
+        new_user = User(
+            username = new_user_data['username'],
+            password = new_user_data['password']
+            #user.hash_password(password)
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+        token=new_user.get_auth_token()
+        User.verify_auth_token(token)
+
+        return jsonify(token=token)

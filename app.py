@@ -1,7 +1,7 @@
-from flask import Flask
+from flask import Flask, abort, jsonify, request, url_for
 from flask_restful import Api
-from models import Product, db
-from resources import ProductResource
+from models import Product, User, db
+from resources import ProductResource, UserResource
 from schema import ma
 
 app = Flask(__name__)
@@ -11,7 +11,11 @@ db.init_app(app)
 ma.init_app(app)
 
 api = Api(app)
+
+api.add_resource(UserResource, '/api/users')
 api.add_resource(ProductResource, '/products','/product/<int:product_id>')
+
+
 
 with app.app_context():
     try:
@@ -28,4 +32,3 @@ with app.app_context():
 
     except(e):
         print("erreur")
-
